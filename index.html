@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>每日塔罗牌抽取</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background: linear-gradient(135deg, #1a0a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #e8d5b7;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 3.5rem;
+            font-weight: 700;
+            color: #d4af37;
+            text-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
+            margin-bottom: 10px;
+            letter-spacing: 3px;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: #b8a88a;
+            font-weight: 300;
+        }
+
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .star {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: #fff;
+            border-radius: 50%;
+            animation: twinkle 2s infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        .main-content {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 40px;
+        }
+
+        .draw-section {
+            text-align: center;
+            margin: 40px 0;
+        }
+
+        .draw-btn {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.5rem;
+            padding: 18px 50px;
+            background: linear-gradient(135deg, #d4af37 0%, #b8860b 100%);
+            color: #1a0a2e;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 20px rgba(212, 175, 55, 0.4);
+            letter-spacing: 2px;
+        }
+
+        .draw-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(212, 175, 55, 0.6);
+        }
+
+        .draw-btn:active {
+            transform: translateY(0);
+        }
+
+        .draw-btn:disabled {
+            background: #666;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .cards-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin: 40px 0;
+        }
+
+        .card {
+            width: 200px;
+            height: 320px;
+            perspective: 1000px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .card:hover,
+        .card.touch-hover {
+            transform: translateY(-10px);
+            z-index: 10;
+            animation: float 2s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(-10px); }
+            50% { transform: translateY(-15px); }
+        }
+
+        .card:hover .card-front,
+        .card.touch-hover .card-front {
+            background: linear-gradient(135deg, #0f3460 0%, #16213e 100%);
+        }
+
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.8s;
+            transform-style: preserve-3d;
+        }
+
+        .card.flipped .card-inner {
+            transform: rotateY(180deg);
+        }
+
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .card-front {
+            background: linear-gradient(135deg, #2c1810 0%, #1a0a2e 100%);
+            border: 3px solid #d4af37;
+        }
+
+        .card-front::before {
+            content: '✧';
+            font-size: 4rem;
+            color: #d4af37;
+            text-shadow: 0 0 20px rgba(212, 175, 55, 0.8);
+        }
+
+        .card-back {
+            background: linear-gradient(135deg, #d4af37 0%, #b8860b 100%);
+            transform: rotateY(180deg);
+            padding: 20px;
+            flex-direction: column;
+            text-align: center;
+        }
+
+        .card-back h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.8rem;
+            color: #1a0a2e;
+            margin-bottom: 5px;
+        }
+
+        .card-back .name-en {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1rem;
+            color: #2c1810;
+            font-style: italic;
+            margin-bottom: 15px;
+        }
+
+        .card-back .icon {
+            font-size: 3rem;
+            color: #1a0a2e;
+            margin-bottom: 15px;
+        }
+
+        .result-section {
+            display: none;
+            max-width: 800px;
+            width: 100%;
+            background: rgba(26, 10, 46, 0.8);
+            border: 2px solid #d4af37;
+            border-radius: 20px;
+            padding: 40px;
+            margin-top: 40px;
+            backdrop-filter: blur(10px);
+        }
+
+        .result-section.show {
+            display: block;
+            animation: fadeIn 0.8s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2.5rem;
+            color: #d4af37;
+            text-align: center;
+            margin-bottom: 30px;
+            text-shadow: 0 0 15px rgba(212, 175, 55, 0.5);
+        }
+
+        .result-card {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .result-card h2 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2rem;
+            color: #d4af37;
+            margin-bottom: 5px;
+        }
+
+        .result-card .name-en {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.2rem;
+            color: #b8a88a;
+            font-style: italic;
+            margin-bottom: 20px;
+        }
+
+        .result-card .icon {
+            font-size: 4rem;
+            color: #d4af37;
+            margin-bottom: 20px;
+            text-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
+        }
+
+        .result-item {
+            background: rgba(212, 175, 55, 0.1);
+            border-left: 4px solid #d4af37;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 0 10px 10px 0;
+        }
+
+        .result-item h4 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.3rem;
+            color: #d4af37;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .result-item p {
+            font-size: 1rem;
+            line-height: 1.6;
+            color: #e8d5b7;
+        }
+
+        .reset-btn {
+            display: block;
+            margin: 30px auto 0;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.2rem;
+            padding: 12px 40px;
+            background: transparent;
+            color: #d4af37;
+            border: 2px solid #d4af37;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .reset-btn:hover {
+            background: #d4af37;
+            color: #1a0a2e;
+        }
+
+        .share-btn {
+            display: block;
+            margin: 15px auto 0;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.1rem;
+            padding: 10px 35px;
+            background: rgba(212, 175, 55, 0.2);
+            color: #d4af37;
+            border: 1px solid #d4af37;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .share-btn:hover {
+            background: #d4af37;
+            color: #1a0a2e;
+        }
+
+        footer {
+            text-align: center;
+            padding: 40px 20px;
+            color: #b8a88a;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.5rem;
+            }
+
+            .subtitle {
+                font-size: 1rem;
+            }
+
+            .card {
+                width: 150px;
+                height: 240px;
+            }
+
+            .cards-container {
+                gap: 15px;
+            }
+
+            .result-section {
+                padding: 25px;
+            }
+
+            .result-title {
+                font-size: 2rem;
+            }
+
+            .result-card h2 {
+                font-size: 1.5rem;
+            }
+
+            .result-item h4 {
+                font-size: 1.1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 2rem;
+            }
+
+            .card {
+                width: 120px;
+                height: 200px;
+            }
+
+            .draw-btn {
+                font-size: 1.2rem;
+                padding: 15px 35px;
+            }
+        }
+
+        .shuffling {
+            animation: shuffle 0.5s ease-in-out;
+        }
+
+        @keyframes shuffle {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+    </style>
+</head>
+<body>
+    <div class="stars" id="stars"></div>
+    
+    <div class="container">
+        <header>
+            <h1>✧ 每日塔罗牌抽取 ✧</h1>
+            <p class="subtitle">探索今日运势，发现穿搭与餐食指引</p>
+        </header>
+
+        <main class="main-content">
+            <div class="draw-section">
+                <button class="draw-btn" id="drawBtn">
+                    <i class="fas fa-hand-sparkles"></i> 抽取今日运势
+                </button>
+            </div>
+
+            <div class="cards-container" id="cardsContainer"></div>
+
+            <div class="result-section" id="resultSection">
+                <h2 class="result-title">✧ 今日指引 ✧</h2>
+                <div class="result-card" id="resultCard"></div>
+            </div>
+        </main>
+
+        <footer>
+            <p>✧ 愿塔罗牌为你带来今日的智慧与指引 ✧</p>
+        </footer>
+    </div>
+
+    <script>
+        const tarotCards = [
+            {
+                name: "愚者",
+                nameEn: "The Fool",
+                fortune: "今天适合大胆开始新事物，保持开放心态。",
+                outfit: "休闲随性，亮色运动鞋。",
+                meal: "创意融合菜或街头小吃。",
+                luckyColor: "亮黄色",
+                icon: "fa-person-walking"
+            },
+            {
+                name: "魔术师",
+                nameEn: "The Magician",
+                fortune: "资源丰富，行动力强，善用你的技能。",
+                outfit: "干练的西装或复古配饰。",
+                meal: "精致料理，如寿司或tapas。",
+                luckyColor: "红色",
+                icon: "fa-wand-magic-sparkles"
+            },
+            {
+                name: "女祭司",
+                nameEn: "The High Priestess",
+                fortune: "直觉敏锐，适合沉思和学习。",
+                outfit: "舒适的长裙或禅意穿搭。",
+                meal: "清淡素食或花草茶。",
+                luckyColor: "蓝色",
+                icon: "fa-moon"
+            },
+            {
+                name: "皇后",
+                nameEn: "The Empress",
+                fortune: "丰盛与创造力，享受生活。",
+                outfit: "温柔色调，印花裙装。",
+                meal: "丰盛的水果拼盘或甜品。",
+                luckyColor: "绿色",
+                icon: "fa-crown"
+            },
+            {
+                name: "皇帝",
+                nameEn: "The Emperor",
+                fortune: "掌控局面，建立秩序。",
+                outfit: "正式套装或权威风格。",
+                meal: "烤肉或丰盛主菜。",
+                luckyColor: "紫色",
+                icon: "fa-chess-king"
+            },
+            {
+                name: "教皇",
+                nameEn: "The Hierophant",
+                fortune: "寻求指引，传统价值。",
+                outfit: "经典简约，学院风。",
+                meal: "传统家常菜。",
+                luckyColor: "棕色",
+                icon: "fa-book-bible"
+            },
+            {
+                name: "恋人",
+                nameEn: "The Lovers",
+                fortune: "面临选择，跟随内心。",
+                outfit: "柔和搭配，情侣装。",
+                meal: "浪漫晚餐，巧克力。",
+                luckyColor: "粉色",
+                icon: "fa-heart"
+            },
+            {
+                name: "战车",
+                nameEn: "The Chariot",
+                fortune: "坚定意志，战胜挑战。",
+                outfit: "运动装备或硬朗风格。",
+                meal: "高能量食物，牛排。",
+                luckyColor: "橙色",
+                icon: "fa-horse-head"
+            },
+            {
+                name: "力量",
+                nameEn: "Strength",
+                fortune: "内在力量，勇气。",
+                outfit: "舒适但有力，皮质配件。",
+                meal: "健康能量碗。",
+                luckyColor: "金色",
+                icon: "fa-paw"
+            },
+            {
+                name: "隐士",
+                nameEn: "The Hermit",
+                fortune: "内省，独处。",
+                outfit: "低调大地色，舒适毛衣。",
+                meal: "暖心汤品。",
+                luckyColor: "灰色",
+                icon: "fa-lantern"
+            }
+        ];
+
+        let shuffledCards = [];
+        let selectedCard = null;
+        let touchState = {
+            currentCard: null,
+            clickCount: 0,
+            lastClickTime: 0,
+            touchStartX: 0,
+            touchStartY: 0
+        };
+
+        function createStars() {
+            const starsContainer = document.getElementById('stars');
+            for (let i = 0; i < 100; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.animationDelay = Math.random() * 2 + 's';
+                starsContainer.appendChild(star);
+            }
+        }
+
+
+
+        function shuffleArray(array) {
+            const newArray = [...array];
+            for (let i = newArray.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+            }
+            return newArray;
+        }
+
+        function displayCards() {
+            const container = document.getElementById('cardsContainer');
+            container.innerHTML = '';
+            
+            shuffledCards.forEach((card, index) => {
+                const cardElement = document.createElement('div');
+                cardElement.className = 'card';
+                cardElement.innerHTML = `
+                    <div class="card-inner">
+                        <div class="card-front"></div>
+                        <div class="card-back">
+                            <i class="fas ${card.icon} icon"></i>
+                            <h3>${card.name}</h3>
+                            <p class="name-en">${card.nameEn}</p>
+                        </div>
+                    </div>
+                `;
+                
+                // 鼠标点击事件
+                cardElement.addEventListener('click', () => selectCard(index));
+                
+                // 触摸事件处理
+                cardElement.addEventListener('touchstart', (e) => handleTouchStart(e, index));
+                cardElement.addEventListener('touchmove', (e) => handleTouchMove(e, index));
+                cardElement.addEventListener('touchend', (e) => handleTouchEnd(e, index));
+                
+                container.appendChild(cardElement);
+            });
+        }
+
+        function handleTouchStart(e, index) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            touchState.touchStartX = touch.clientX;
+            touchState.touchStartY = touch.clientY;
+            
+            // 检测是否在卡牌上
+            const cardElement = e.currentTarget;
+            const rect = cardElement.getBoundingClientRect();
+            if (touch.clientX >= rect.left && touch.clientX <= rect.right &&
+                touch.clientY >= rect.top && touch.clientY <= rect.bottom) {
+                cardElement.classList.add('touch-hover');
+                touchState.currentCard = index;
+            }
+        }
+
+        function handleTouchMove(e, index) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            
+            // 检查触摸点是否在任何卡牌上
+            const cards = document.querySelectorAll('.card');
+            let hoverCard = null;
+            
+            cards.forEach((card, cardIndex) => {
+                const rect = card.getBoundingClientRect();
+                if (touch.clientX >= rect.left && touch.clientX <= rect.right &&
+                    touch.clientY >= rect.top && touch.clientY <= rect.bottom) {
+                    hoverCard = card;
+                    touchState.currentCard = cardIndex;
+                } else {
+                    card.classList.remove('touch-hover');
+                }
+            });
+            
+            if (hoverCard) {
+                hoverCard.classList.add('touch-hover');
+            }
+        }
+
+        function handleTouchEnd(e, index) {
+            e.preventDefault();
+            
+            // 检查是否是按压动作（Y方向移动不大）
+            const touch = e.changedTouches[0];
+            const deltaY = Math.abs(touch.clientY - touchState.touchStartY);
+            
+            if (deltaY < 10 && touchState.currentCard === index) {
+                // 视为按压动作
+                const now = Date.now();
+                const timeSinceLastClick = now - touchState.lastClickTime;
+                
+                if (timeSinceLastClick < 500) {
+                    // 两次点击间隔小于500ms，视为双击
+                    touchState.clickCount = 0;
+                    touchState.lastClickTime = 0;
+                    selectCard(index);
+                } else {
+                    // 第一次点击
+                    touchState.clickCount = 1;
+                    touchState.lastClickTime = now;
+                }
+            }
+            
+            // 移除所有触摸悬停效果
+            const cards = document.querySelectorAll('.card');
+            cards.forEach(card => {
+                card.classList.remove('touch-hover');
+            });
+        }
+
+        function selectCard(index) {
+            if (selectedCard !== null) return;
+            
+            selectedCard = index;
+            const cards = document.querySelectorAll('.card');
+            cards[index].classList.add('flipped');
+            
+            // 禁用所有卡牌的悬停特效
+            cards.forEach((card, i) => {
+                if (i !== index) {
+                    card.style.pointerEvents = 'none';
+                    card.style.cursor = 'default';
+                }
+            });
+            
+            setTimeout(() => {
+                showResult(shuffledCards[index]);
+            }, 800);
+        }
+
+        function showResult(card) {
+            const resultSection = document.getElementById('resultSection');
+            const resultCard = document.getElementById('resultCard');
+            
+            resultCard.innerHTML = `
+                <i class="fas ${card.icon} icon"></i>
+                <h2>${card.name}</h2>
+                <p class="name-en">${card.nameEn}</p>
+                <div class="result-item">
+                    <h4><i class="fas fa-star"></i> 今日运势</h4>
+                    <p>${card.fortune}</p>
+                </div>
+                <div class="result-item">
+                    <h4><i class="fas fa-shirt"></i> 穿搭建议</h4>
+                    <p>${card.outfit}</p>
+                </div>
+                <div class="result-item">
+                    <h4><i class="fas fa-utensils"></i> 餐食建议</h4>
+                    <p>${card.meal}</p>
+                </div>
+                <div class="result-item">
+                    <h4><i class="fas fa-palette"></i> 幸运色</h4>
+                    <p>${card.luckyColor}</p>
+                </div>
+                <button class="reset-btn" onclick="resetGame()">
+                    <i class="fas fa-redo"></i> 重新抽取
+                </button>
+                <button class="share-btn" onclick="shareResult()">
+                    <i class="fas fa-share-alt"></i> 分享结果
+                </button>
+            `;
+            
+            resultSection.classList.add('show');
+            resultSection.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function drawCards() {
+            const drawBtn = document.getElementById('drawBtn');
+            const cardsContainer = document.getElementById('cardsContainer');
+            const resultSection = document.getElementById('resultSection');
+            
+            drawBtn.disabled = true;
+            resultSection.classList.remove('show');
+            selectedCard = null;
+            
+            shuffledCards = shuffleArray(tarotCards).slice(0, 5);
+            
+            displayCards();
+            
+            cardsContainer.classList.add('shuffling');
+            setTimeout(() => {
+                cardsContainer.classList.remove('shuffling');
+                drawBtn.disabled = false;
+            }, 500);
+        }
+
+        function resetGame() {
+            const resultSection = document.getElementById('resultSection');
+            const cardsContainer = document.getElementById('cardsContainer');
+            
+            resultSection.classList.remove('show');
+            cardsContainer.innerHTML = '';
+            selectedCard = null;
+            
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function shareResult() {
+            if (selectedCard === null) return;
+            
+            const card = shuffledCards[selectedCard];
+            const cardId = tarotCards.findIndex(function(c) { return c.name === card.name; });
+            
+            // 使用普通字符串替代模板字符串，避免可能的问题
+            var shareText = "今日塔罗牌：" + card.name + "\n" +
+                           "运势：" + card.fortune + "\n" +
+                           "穿搭：" + card.outfit + "\n" +
+                           "餐食：" + card.meal + "\n" +
+                           "幸运色：" + card.luckyColor;
+            
+            // 直接使用剪贴板复制，确保在所有环境中都能工作
+            var shareUrl = window.location.href + "?card=" + cardId;
+            var textToCopy = shareText + "\n\n" + "查看更多：" + shareUrl;
+            
+            try {
+                if (navigator.clipboard && window.isSecureContext) {
+                    // 现代浏览器，使用clipboard API
+                    navigator.clipboard.writeText(textToCopy).then(function() {
+                        alert('分享内容已复制到剪贴板，可粘贴发送给朋友！');
+                    }).catch(function(err) {
+                        console.error('剪贴板复制失败:', err);
+                        alert('复制失败，请手动分享链接');
+                    });
+                } else {
+                    // 旧浏览器，使用传统方法
+                    var textArea = document.createElement("textarea");
+                    textArea.value = textToCopy;
+                    textArea.style.position = "fixed";
+                    textArea.style.left = "-999999px";
+                    textArea.style.top = "-999999px";
+                    document.body.appendChild(textArea);
+                    textArea.focus();
+                    textArea.select();
+                    
+                    try {
+                        document.execCommand('copy');
+                        alert('分享内容已复制到剪贴板，可粘贴发送给朋友！');
+                    } catch (err) {
+                        console.error('传统复制失败:', err);
+                        alert('复制失败，请手动分享链接');
+                    }
+                    
+                    document.body.removeChild(textArea);
+                }
+            } catch (err) {
+                console.error('分享功能失败:', err);
+                alert('分享功能暂时不可用，请手动复制链接');
+            }
+        }
+
+        // 检查URL参数，支持直接打开分享链接
+        function checkShareLink() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const cardId = urlParams.get('card');
+            
+            if (cardId) {
+                const cardIndex = parseInt(cardId);
+                if (cardIndex >= 0 && cardIndex < tarotCards.length) {
+                    setTimeout(() => {
+                        showResult(tarotCards[cardIndex]);
+                    }, 1000);
+                }
+            }
+        }
+
+        document.getElementById('drawBtn').addEventListener('click', drawCards);
+
+        createStars();
+        checkShareLink();
+    </script>
+</body>
+</html>
